@@ -1,0 +1,40 @@
+name: Weekly CSV Cleanup
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Sundays at 00:00 UTC
+  workflow_dispatch: 
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Scraper Dependencies
+        run: npm install bittorrent-tracker
+
+      - name: Run Scraper Script
+        run: node scripts/update-stats.js
+
+      - name: Commit and Push Updated CSV
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          if git diff --quiet torrents.csv; then
+            echo "No changes in torrents.csv, skipping commit."
+          else
+            git add torrents.csv
+            git commit -m "chore: weekly csv health check and stats update [skip ci]"
+            git push
+          fi
