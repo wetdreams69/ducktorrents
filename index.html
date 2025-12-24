@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DuckTorrents | Serverless Torrent Search</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff9000">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="loader" class="loader-overlay">
+        <div class="spinner"></div>
+        <p>Initializing Database Engine...</p>
+    </div>
+
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo"><span>Duck</span>Torrents</h1>
+            <div class="db-status" id="db-status">Connecting...</div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="hero">
+            <h2 class="display-title">Search millions of torrents</h2>
+            <p class="subtitle">Fast, private, and serverless. Powered by DuckDB-WASM.</p>
+        </header>
+
+        <section class="search-section">
+            <div class="search-box glass">
+                <input type="text" id="search-input" placeholder="E.g. Ubuntu, Movie title, High quality..." autofocus>
+                <button id="search-btn">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                        <path fill="currentColor"
+                            d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                    </svg>
+                </button>
+            </div>
+        </section>
+
+        <div id="results-meta" class="results-meta"></div>
+
+        <section id="results-container" class="results-grid">
+            <!-- Results will be injected here -->
+        </section>
+
+        <div id="empty-state" class="empty-state hidden">
+            <p>No results found for that query.</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>Made with 🦆 by <strong>wetdreams69</strong></p>
+            <p class="powered">Powered by <a href="https://github.com" target="_blank" rel="noopener">GitHub</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Register Service Worker for offline support and smart caching
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').then(() => {
+                console.log('Service Worker registered');
+            }).catch((err) => {
+                console.error('Service Worker registration failed:', err);
+            });
+        }
+    </script>
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

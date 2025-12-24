@@ -1,0 +1,21 @@
+{
+  "name": "ducktorrents",
+  "version": "1.0.0",
+  "description": "DuckTorrents - Serverless Torrent Search Engine PWA",
+  "type": "module",
+  "scripts": {
+    "dev": "npx http-server . -c-1 --cors",
+    "start": "npx http-server . --cors"
+  },
+  "keywords": [
+    "pwa",
+    "duckdb",
+    "parquet",
+    "serverless",
+    "torrent"
+  ],
+  "author": "wetdreams69",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
