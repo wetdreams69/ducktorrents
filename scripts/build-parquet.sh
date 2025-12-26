@@ -6,24 +6,25 @@ wget -q https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-lin
 unzip -q duckdb_cli-linux-amd64.zip
 chmod +x ./duckdb
 
-echo "Converting CSV parts to Parquet..."
+echo "Converting CSV parts to Parquet with sorting (for indexing)..."
 
-# Build SQL query to union all CSV parts
+# Build SQL query to union all CSV parts and sort them
+# Sorting by infohash allows DuckDB to use row group statistics for faster lookups (effectively an index)
 sql_query="COPY (SELECT * FROM ("
 
 first=true
 for csv_file in torrents_part_*.csv; do
     if [ -f "$csv_file" ]; then
         if [ "$first" = true ]; then
-            sql_query="${sql_query}SELECT * FROM read_csv_auto('${csv_file}', ignore_errors=true)"
+            sql_query="${sql_query}SELECT * FROM read_csv_auto('${csv_file}', ignore_errors=true, delim=';')"
             first=false
         else
-            sql_query="${sql_query} UNION ALL SELECT * FROM read_csv_auto('${csv_file}', ignore_errors=true)"
+            sql_query="${sql_query} UNION ALL SELECT * FROM read_csv_auto('${csv_file}', ignore_errors=true, delim=';')"
         fi
     fi
 done
 
-sql_query="${sql_query})) TO 'torrents.parquet' (FORMAT PARQUET, COMPRESSION ZSTD);"
+sql_query="${sql_query}) ORDER BY infohash) TO 'torrents.parquet' (FORMAT PARQUET, COMPRESSION ZSTD);"
 
 echo "Executing DuckDB query..."
 ./duckdb -c "$sql_query"
@@ -31,4 +32,4 @@ echo "Executing DuckDB query..."
 echo "Cleaning up..."
 rm duckdb_cli-linux-amd64.zip duckdb
 
-echo "✅ Parquet file created successfully from CSV parts!"
+echo "✅ Parquet file created successfully with infohash index (sorted)!"

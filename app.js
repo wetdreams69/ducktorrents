@@ -155,4 +155,23 @@ searchInput.addEventListener('input', (e) => {
     performSearch(e.target.value);
 });
 
+// Modal Logic
+const modal = document.getElementById('contribute-modal');
+const openModalBtn = document.getElementById('open-contribute');
+const contributeBtn = document.getElementById('contribute-btn');
+const closeModalBtn = document.getElementById('close-modal');
+
+const toggleModal = (e) => {
+    if (e) e.preventDefault();
+    modal.classList.toggle('hidden');
+};
+
+openModalBtn.addEventListener('click', toggleModal);
+contributeBtn.addEventListener('click', toggleModal);
+closeModalBtn.addEventListener('click', toggleModal);
+
+modal.addEventListener('click', (e) => {
+    if (e.target === modal) toggleModal();
+});
+
 init();

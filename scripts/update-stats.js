@@ -3,7 +3,6 @@ import path from 'node:path';
 // @ts-expect-error - Metadata extraction library
 import bittorrentTracker from 'bittorrent-tracker';
 
-const csvPath = path.resolve(process.cwd(), 'torrents.csv');
 const TRACKERS = [
     'udp://tracker.opentrackr.org:1337/announce',
     'udp://open.stealth.si:80/announce',
@@ -35,31 +34,56 @@ async function scrape(infoHash) {
 }
 
 async function run() {
-    if (!fs.existsSync(csvPath)) return;
+    const files = fs.readdirSync(process.cwd())
+        .filter(f => f.startsWith('torrents_part_') && f.endsWith('.csv'))
+        .sort((a, b) => {
+            const numA = parseInt(a.match(/\d+/)[0]);
+            const numB = parseInt(b.match(/\d+/)[0]);
+            return numA - numB;
+        });
 
-    const content = fs.readFileSync(csvPath, 'utf8');
-    const lines = content.trim().split('\n');
-    const header = lines[0];
-    const dataLines = lines.slice(1);
-
-    console.log(`Checking ${dataLines.length} torrents...`);
-    const updatedLines = [];
-
-    for (const line of dataLines) {
-        const [infohash, name, size, s, l, c, date] = line.split(',');
-        const stats = await scrape(infohash);
-
-        if (stats.s > 0) {
-            // Update with fresh stats and date
-            updatedLines.push([infohash, name, size, stats.s, stats.l, c, new Date().toISOString()].join(','));
-            console.log(`✅ ${name} is alive (S: ${stats.s})`);
-        } else {
-            console.log(`🗑️ ${name} is dead. Removing.`);
-        }
+    if (files.length === 0) {
+        console.log('No torrents_part_*.csv files found.');
+        return;
     }
 
-    const finalContent = [header, ...updatedLines].join('\n') + '\n';
-    fs.writeFileSync(csvPath, finalContent);
+    for (const csvFile of files) {
+        const csvPath = path.resolve(process.cwd(), csvFile);
+        console.log(`Processing ${csvFile}...`);
+
+        const content = fs.readFileSync(csvPath, 'utf8');
+        const lines = content.trim().split('\n');
+        if (lines.length <= 1) continue;
+
+        const header = lines[0];
+        const dataLines = lines.slice(1);
+
+        console.log(`Checking ${dataLines.length} torrents in ${csvFile}...`);
+        const updatedLines = [];
+
+        for (const line of dataLines) {
+            // Using ; as delimiter based on file inspection
+            const [infohash, name, size, created, s, l, c, date] = line.split(';');
+
+            // Skip invalid lines
+            if (!infohash) continue;
+
+            const stats = await scrape(infohash);
+
+            if (stats.s > 0) {
+                // Update with fresh stats and date
+                // Format: infohash;name;size_bytes;created_unix;seeders;leechers;completed;scraped_date
+                updatedLines.push([infohash, name, size, created, stats.s, stats.l, c, Math.floor(Date.now() / 1000)].join(';'));
+                console.log(`✅ ${name} is alive (S: ${stats.s})`);
+            } else {
+                console.log(`🗑️ ${name} is dead. Removing.`);
+            }
+        }
+
+        const finalContent = [header, ...updatedLines].join('\n') + '\n';
+        fs.writeFileSync(csvPath, finalContent);
+    }
+
     console.log('Update complete.');
 }
 

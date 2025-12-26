@@ -23,11 +23,12 @@
 Want to add a torrent? Simply:
 
 1. Fork this repository
-2. Add your torrent to `torrents.csv`:
+2. Add your torrent to the last `torrents_part_N.csv` file:
    ```csv
-   infohash,name,size_bytes,seeders,leechers,completed,scraped_date
-   YOUR_INFOHASH,Torrent Name,1234567890,100,10,500,2024-12-24T00:00:00Z
+   infohash;name;size_bytes;created_unix;seeders;leechers;completed;scraped_date
+   YOUR_INFOHASH;Torrent Name;1234567890;1735221072;0;0;0;1735221072
    ```
+   *Note: Use `;` as delimiter.*
 3. Submit a Pull Request
 
 The GitHub Action will automatically:
@@ -64,7 +65,7 @@ bash scripts/build-parquet.sh
 
 ## License
 
-MIT
+GNU Affero General Public License v3.0 or later
 
 ---
 

@@ -15,7 +15,7 @@
     "torrent"
   ],
   "author": "wetdreams69",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "dependencies": {},
   "devDependencies": {}
 }

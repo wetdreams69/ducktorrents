@@ -26,15 +26,15 @@ jobs:
       - name: Run Scraper Script
         run: node scripts/update-stats.js
 
-      - name: Commit and Push Updated CSV
+      - name: Commit and Push Updated CSV Parts
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          if git diff --quiet torrents.csv; then
-            echo "No changes in torrents.csv, skipping commit."
+          git add torrents_part_*.csv
+          if git diff --staged --quiet; then
+            echo "No changes in CSV parts, skipping commit."
           else
-            git add torrents.csv
             git commit -m "chore: weekly csv health check and stats update [skip ci]"
             git push
           fi

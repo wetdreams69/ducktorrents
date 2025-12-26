@@ -29,6 +29,7 @@
         <header class="hero">
             <h2 class="display-title">Search millions of torrents</h2>
             <p class="subtitle">Fast, private, and serverless. Powered by DuckDB-WASM.</p>
+            <button id="contribute-btn" class="secondary-btn">Add Torrent via PR</button>
         </header>
 
         <section class="search-section">
@@ -57,9 +58,37 @@
     <footer class="footer">
         <div class="container">
             <p>Made with 🦆 by <strong>wetdreams69</strong></p>
-            <p class="powered">Powered by <a href="https://github.com" target="_blank" rel="noopener">GitHub</a></p>
+            <p class="powered">Powered by <a href="https://github.com/ogioia/ssr" target="_blank"
+                    rel="noopener">GitHub</a> | <a href="#" id="open-contribute">How to Contribute</a></p>
         </div>
     </footer>
+
+    <!-- Contribution Modal -->
+    <div id="contribute-modal" class="modal-overlay hidden">
+        <div class="modal glass">
+            <div class="modal-header">
+                <h3>How to Contribution (Add Torrent)</h3>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>This search engine is driven by the community. To add a torrent, you need to create a **Pull
+                    Request** on GitHub:</p>
+                <ol>
+                    <li><strong>Fork</strong> the repository on GitHub.</li>
+                    <li>Open the latest <code>torrents_part_N.csv</code> file.</li>
+                    <li>Add your torrent at the end using the <code>;</code> delimiter:
+                        <pre><code>infohash;name;size_bytes;created;0;0;0;date</code></pre>
+                    </li>
+                    <li>Submit your Pull Request. Our Action will build the database automatically!</li>
+                </ol>
+                <p class="modal-note">Revisa el archivo <code>CONTRIBUING.MD</code> para instrucciones detalladas y
+                    scripts de ayuda.</p>
+            </div>
+            <div class="modal-footer">
+                <a href="https://github.com/ogioia/ssr" target="_blank" class="magnet-btn">View on GitHub</a>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Register Service Worker for offline support and smart caching
