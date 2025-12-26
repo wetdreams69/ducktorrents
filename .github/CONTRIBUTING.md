@@ -22,7 +22,7 @@ Thank you for your interest in contributing! This project is built to be serverl
 
 1. **Fork and Clone** the repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/ssr.git
+   git clone https://github.com/wetdreams69/ducktorrents.git
    cd ssr
    ```
 2. Use the provided helper script to add a torrent (it automatically finds the right file):
@@ -52,3 +52,4 @@ Once your PR is merged:
 3. The search engine will reflect your changes within minutes.
 
 Thank you for keeping the library growing! 🚀
+
