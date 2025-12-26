@@ -56,26 +56,9 @@ async function init() {
             }
         } catch (err) {
             console.error('Parquet load failed:', err);
-            // Fallback to CSV
-            try {
-                const csvResponse = await fetch('torrents.csv');
-                if (csvResponse.ok) {
-                    const csvBuffer = await csvResponse.arrayBuffer();
-                    await db.registerFileBuffer('torrents.csv', new Uint8Array(csvBuffer));
-
-                    await conn.query(`CREATE TABLE torrents AS SELECT * FROM read_csv_auto('torrents.csv');`);
-                    loader.classList.add('hidden');
-                    statusBadge.textContent = 'CSV Fallback (Dev)';
-                    performSearch('');
-                } else {
-                    throw new Error('CSV file not found');
-                }
-            } catch (csvErr) {
-                console.error('CSV fallback failed:', csvErr);
-                statusBadge.textContent = 'Error Loading Data';
-                statusBadge.style.color = '#f43f5e';
-                loader.classList.add('hidden');
-            }
+            statusBadge.textContent = 'Data Not Available';
+            statusBadge.style.color = '#f43f5e';
+            loader.classList.add('hidden');
         }
     } catch (error) {
         console.error('Fatal initialization error:', error);
