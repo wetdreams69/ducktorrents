@@ -99,11 +99,14 @@ async function performSearch(query) {
     }
 
     let sql;
-    let params = [];
+    let params;
 
     if (queryTrimmed === '') {
+        // Show top 5 most downloaded torrents when search is empty
         sql = 'SELECT * FROM torrents WHERE seeders > 0 ORDER BY completed DESC, seeders DESC LIMIT 5';
+        params = undefined; // No parameters needed
     } else {
+        // ✅ FIXED: Using parameterized queries to prevent SQL injection
         const searchTerm = queryTrimmed;
         sql = `
             SELECT * FROM torrents 
@@ -119,7 +122,8 @@ async function performSearch(query) {
 
     try {
         const startTime = performance.now();
-        const result = await conn.query(sql, params);
+        // Only pass params if they exist
+        const result = params ? await conn.query(sql, params) : await conn.query(sql);
         const endTime = performance.now();
         const rows = result.toArray();
         const duration = endTime - startTime;
@@ -184,12 +188,12 @@ function renderResults(rows, duration, isTopTorrents = false, searchTerm = '') {
                 </h3>
                 <div class="stats">
                     <span class="size">${sizeGB} GB</span>
-                    <span class="seeders" title="Seeders"> ${obj.seeders}</span>
-                    <span class="leechers" title="Leechers"> ${obj.leechers}</span>
-                    ${obj.completed ? `<span class="completed" title="Downloads"> ${obj.completed}</span>` : ''}
+                    <span class="seeders" title="Seeders">S: ${obj.seeders}</span>
+                    <span class="leechers" title="Leechers">L: ${obj.leechers}</span>
+                    ${obj.completed ? `<span class="completed" title="Downloads">D: ${obj.completed}</span>` : ''}
                 </div>
             </div>
-            <a href="${magnet}" class="magnet-btn" title="Download via magnet link">🧲 Magnet</a>
+            <a href="${magnet}" class="magnet-btn" title="Download via magnet link">Magnet</a>
         `;
         resultsContainer.appendChild(card);
     });
