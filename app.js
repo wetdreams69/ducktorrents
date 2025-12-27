@@ -99,31 +99,30 @@ async function performSearch(query) {
     }
 
     let sql;
-    let params;
-
-    if (queryTrimmed === '') {
-        // Show top 5 most downloaded torrents when search is empty
-        sql = 'SELECT * FROM torrents WHERE seeders > 0 ORDER BY completed DESC, seeders DESC LIMIT 5';
-        params = undefined; // No parameters needed
-    } else {
-        // ✅ FIXED: Using parameterized queries to prevent SQL injection
-        const searchTerm = queryTrimmed;
-        sql = `
-            SELECT * FROM torrents 
-            WHERE seeders > 0 AND (
-                name ILIKE '%' || ? || '%' 
-                OR infohash ILIKE ?
-            )
-            ORDER BY seeders DESC 
-            LIMIT 50
-        `;
-        params = [searchTerm, searchTerm];
-    }
+    let result;
 
     try {
         const startTime = performance.now();
-        // Only pass params if they exist
-        const result = params ? await conn.query(sql, params) : await conn.query(sql);
+        
+        if (queryTrimmed === '') {
+            // Show top 5 most downloaded torrents when search is empty (no parameters)
+            sql = 'SELECT * FROM torrents WHERE seeders > 0 ORDER BY completed DESC, seeders DESC LIMIT 5';
+            result = await conn.query(sql);
+        } else {
+            // ✅ FIXED: Using parameterized queries to prevent SQL injection
+            const searchTerm = queryTrimmed;
+            sql = `
+                SELECT * FROM torrents 
+                WHERE seeders > 0 AND (
+                    name ILIKE '%' || ? || '%' 
+                    OR infohash ILIKE ?
+                )
+                ORDER BY seeders DESC 
+                LIMIT 50
+            `;
+            result = await conn.query(sql, [searchTerm, searchTerm]);
+        }
+        
         const endTime = performance.now();
         const rows = result.toArray();
         const duration = endTime - startTime;
