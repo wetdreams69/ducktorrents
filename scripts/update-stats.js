@@ -10,25 +10,47 @@ const TRACKERS = [
     'udp://exodus.desync.com:6969/announce'
 ];
 
-async function scrape(infoHash) {
+const BATCH_SIZE = 50;
+const CONCURRENCY = 15;
+const SCRAPE_TIMEOUT = 10000;
+
+async function scrapeBatch(infoHashes) {
     return new Promise((resolve) => {
-        const timeout = setTimeout(() => resolve({ s: 0, l: 0 }), 10000);
+        const resultsMap = new Map();
+        infoHashes.forEach(h => {
+            resultsMap.set(h.toLowerCase(), { s: 0, l: 0 });
+        });
+
+        const timeout = setTimeout(() => {
+            resolve(resultsMap);
+        }, SCRAPE_TIMEOUT + 2000);
+
         try {
-            bittorrentTracker.scrape({ infoHash, announce: TRACKERS }, (err, results) => {
+            bittorrentTracker.scrape({ infoHash: infoHashes, announce: TRACKERS }, (err, results) => {
                 clearTimeout(timeout);
-                if (err || !results) return resolve({ s: 0, l: 0 });
-                let maxS = 0, maxL = 0;
-                Object.values(results).forEach(res => {
-                    if (res) {
-                        maxS = Math.max(maxS, res.complete || 0);
-                        maxL = Math.max(maxL, res.incomplete || 0);
+                if (err || !results) return resolve(resultsMap);
+
+                // results is { [trackerUrl]: trackerData }
+                for (const trackerData of Object.values(results)) {
+                    if (!trackerData) continue;
+                    
+                    // bittorrent-tracker returns results keyed by infohash if multiple hashes were requested
+                    // Note: keys might be hex strings or binary hashes depending on the library version
+                    // and how it was called, but for node-bittorrent-tracker it's usually hex strings.
+                    for (const [hash, stats] of Object.entries(trackerData)) {
+                        const h = hash.toLowerCase();
+                        if (resultsMap.has(h)) {
+                            const current = resultsMap.get(h);
+                            current.s = Math.max(current.s, stats.complete || 0);
+                            current.l = Math.max(current.l, stats.incomplete || 0);
+                        }
                     }
-                });
-                resolve({ s: maxS, l: maxL });
+                }
+                resolve(resultsMap);
             });
         } catch (e) {
             clearTimeout(timeout);
-            resolve({ s: 0, l: 0 });
+            resolve(resultsMap);
         }
     });
 }
@@ -47,9 +69,12 @@ async function run() {
         return;
     }
 
+    const startTime = Date.now();
+    let totalRemoved = 0;
+
     for (const csvFile of files) {
         const csvPath = path.resolve(process.cwd(), csvFile);
-        console.log(`Processing ${csvFile}...`);
+        console.log(`\nProcessing ${csvFile}...`);
 
         const content = fs.readFileSync(csvPath, 'utf8');
         const lines = content.trim().split('\n');
@@ -57,34 +82,64 @@ async function run() {
 
         const header = lines[0];
         const dataLines = lines.slice(1);
-
-        console.log(`Checking ${dataLines.length} torrents in ${csvFile}...`);
+        const totalInFile = dataLines.length;
+        
+        console.log(`Checking ${totalInFile} torrents in ${csvFile}...`);
         const updatedLines = [];
 
-        for (const line of dataLines) {
-            // Using ; as delimiter based on file inspection
-            const [infohash, name, size, created, s, l, c, date] = line.split(';');
+        // Split into batches
+        const batches = [];
+        for (let i = 0; i < dataLines.length; i += BATCH_SIZE) {
+            batches.push(dataLines.slice(i, i + BATCH_SIZE));
+        }
 
-            // Skip invalid lines
-            if (!infohash) continue;
+        let processedInFile = 0;
 
-            const stats = await scrape(infohash);
+        // Process batches with concurrency
+        for (let i = 0; i < batches.length; i += CONCURRENCY) {
+            const currentBatches = batches.slice(i, i + CONCURRENCY);
+            
+            await Promise.all(currentBatches.map(async (batch) => {
+                const batchEntries = batch.map(line => {
+                    const parts = line.split(';');
+                    return { line, infohash: parts[0], name: parts[1], parts };
+                }).filter(e => e.infohash);
 
-            if (stats.s > 0) {
-                // Update with fresh stats and date
-                // Format: infohash;name;size_bytes;created_unix;seeders;leechers;completed;scraped_date
-                updatedLines.push([infohash, name, size, created, stats.s, stats.l, c, Math.floor(Date.now() / 1000)].join(';'));
-                console.log(`✅ ${name} is alive (S: ${stats.s})`);
-            } else {
-                console.log(`🗑️ ${name} is dead. Removing.`);
-            }
+                const infoHashes = batchEntries.map(e => e.infohash);
+                if (infoHashes.length === 0) return;
+
+                const batchResults = await scrapeBatch(infoHashes);
+
+                for (const entry of batchEntries) {
+                    const stats = batchResults.get(entry.infohash.toLowerCase());
+                    if (stats && stats.s > 0) {
+                        // Update with fresh stats and date
+                        // Format: infohash;name;size_bytes;created_unix;seeders;leechers;completed;scraped_date
+                        const p = entry.parts;
+                        p[4] = stats.s; // seeders
+                        p[5] = stats.l; // leechers
+                        p[7] = Math.floor(Date.now() / 1000); // date
+                        updatedLines.push(p.join(';'));
+                    } else {
+                        totalRemoved++;
+                    }
+                }
+                
+                processedInFile += batch.length;
+            }));
+
+            const percentage = ((processedInFile / totalInFile) * 100).toFixed(1);
+            process.stdout.write(`\rProgress: ${processedInFile}/${totalInFile} (${percentage}%) - Removed so far: ${totalRemoved}   `);
         }
 
         const finalContent = [header, ...updatedLines].join('\n') + '\n';
         fs.writeFileSync(csvPath, finalContent);
+        console.log(`\nFinished ${csvFile}. New size: ${updatedLines.length} torrents.`);
     }
 
-    console.log('Update complete.');
+    const duration = ((Date.now() - startTime) / 1000 / 60).toFixed(2);
+    console.log(`\nAll files updated in ${duration} minutes.`);
+    console.log(`Total removed: ${totalRemoved} dead torrents.`);
 }
 
 run();
