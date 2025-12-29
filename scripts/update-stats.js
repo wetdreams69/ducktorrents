@@ -150,4 +150,10 @@ async function run() {
     console.log('\n✅ All files updated.');
 }
 
-run();
+run().then(() => {
+    process.exit(0);
+}).catch(err => {
+    console.error(err);
+    process.exit(1);
+});
+
