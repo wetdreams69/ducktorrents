@@ -4,87 +4,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DuckTorrents | Serverless Torrent Search Engine</title>
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Fast, private, and serverless torrent search engine powered by DuckDB-WASM. Search millions of torrents directly in your browser with zero server costs.">
-    <meta name="keywords" content="torrent search, serverless, DuckDB-WASM, private search, torrent index, P2P">
-    <meta name="author" content="wetdreams69">
-    
-    <!-- Open Graph / Social Media -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="DuckTorrents - Serverless Torrent Search">
-    <meta property="og:description" content="Search millions of torrents privately in your browser. Powered by DuckDB-WASM.">
-    <meta property="og:url" content="https://wetdreams69.github.io/ducktorrents/">
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="DuckTorrents - Serverless Torrent Search">
-    <meta name="twitter:description" content="Fast, private torrent search powered by DuckDB-WASM">
-    
-    <!-- PWA -->
+    <title>DuckTorrents | Serverless Torrent Search</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ff9000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="DuckTorrents">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦆</text></svg>">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    
-    <!-- Styles -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <!-- Loading Overlay -->
     <div id="loader" class="loader-overlay">
         <div class="spinner"></div>
         <p>Initializing Database Engine...</p>
     </div>
 
-    <!-- Navigation -->
-    <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <nav class="navbar">
         <div class="container">
-            <h1 class="logo">
-                <span aria-label="Duck">Duck</span>Torrents
-            </h1>
-            <div class="db-status" id="db-status" role="status" aria-live="polite">
-                Connecting...
-            </div>
+            <h1 class="logo"><span>Duck</span>Torrents</h1>
+            <div class="db-status" id="db-status">Connecting...</div>
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="container">
-        <!-- Hero Section -->
         <header class="hero">
             <h2 class="display-title">Search millions of torrents</h2>
             <p class="subtitle">Fast, private, and serverless. Powered by DuckDB-WASM.</p>
-            <button id="contribute-btn" class="secondary-btn" aria-label="Open contribution guide">
-                📝 Add Torrent via PR
-            </button>
+            <button id="contribute-btn" class="secondary-btn">Add Torrent via PR</button>
         </header>
 
-        <!-- Search Section -->
-        <section class="search-section" role="search" aria-label="Torrent search">
+        <section class="search-section">
             <div class="search-box glass">
-                <input 
-                    type="search" 
-                    id="search-input" 
-                    placeholder="E.g. Ubuntu, Movie title, High quality..." 
-                    aria-label="Search torrents"
-                    autocomplete="off"
-                    spellcheck="false"
-                    autofocus
-                >
-                <button id="search-btn" aria-label="Search">
-                    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                <input type="text" id="search-input" placeholder="E.g. Ubuntu, Movie title, High quality..." autofocus>
+                <button id="search-btn">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
                         <path fill="currentColor"
                             d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
                     </svg>
@@ -92,125 +44,51 @@
             </div>
         </section>
 
-        <!-- Results Meta -->
-        <div id="results-meta" class="results-meta" role="status" aria-live="polite"></div>
+        <div id="results-meta" class="results-meta"></div>
 
-        <!-- Results Grid -->
-        <section 
-            id="results-container" 
-            class="results-grid" 
-            role="region" 
-            aria-label="Search results"
-            aria-live="polite"
-        >
+        <section id="results-container" class="results-grid">
             <!-- Results will be injected here -->
         </section>
 
-        <!-- Empty State -->
-        <div id="empty-state" class="empty-state hidden" role="status">
+        <div id="empty-state" class="empty-state hidden">
             <p>No results found for that query.</p>
-            <p class="subtitle">Try different keywords or check your spelling</p>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="footer" role="contentinfo">
+    <footer class="footer">
         <div class="container">
             <p>Made with 🦆 by <strong>wetdreams69</strong></p>
-            <p class="powered">
-                Powered by 
-                <a href="https://github.com/wetdreams69/ducktorrents" 
-                   target="_blank" 
-                   rel="noopener noreferrer"
-                   aria-label="View source code on GitHub">
-                    GitHub
-                </a> 
-                | 
-                <a href="#" 
-                   id="open-contribute"
-                   aria-label="Open contribution guide">
-                    How to Contribute
-                </a>
-            </p>
+            <p class="powered">Powered by <a href="https://github.com/ogioia/ssr" target="_blank"
+                    rel="noopener">GitHub</a> | <a href="#" id="open-contribute">How to Contribute</a></p>
         </div>
     </footer>
 
     <!-- Contribution Modal -->
-    <div 
-        id="contribute-modal" 
-        class="modal-overlay hidden" 
-        role="dialog" 
-        aria-modal="true" 
-        aria-labelledby="modal-title"
-    >
+    <div id="contribute-modal" class="modal-overlay hidden">
         <div class="modal glass">
             <div class="modal-header">
-                <h3 id="modal-title">How to Contribute (Add Torrent)</h3>
-                <button 
-                    id="close-modal" 
-                    class="close-btn" 
-                    aria-label="Close modal"
-                >
-                    &times;
-                </button>
+                <h3>How to Contribution (Add Torrent)</h3>
+                <button id="close-modal" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <p>
-                    This search engine is driven by the community. To add a torrent, 
-                    you need to create a <strong>Pull Request</strong> on GitHub:
-                </p>
+                <p>This search engine is driven by the community. To add a torrent, you need to create a **Pull
+                    Request** on GitHub:</p>
                 <ol>
-                    <li>
-                        <strong>Fork</strong> the repository on 
-                        <a href="https://github.com/wetdreams69/ducktorrents" 
-                           target="_blank" 
-                           rel="noopener noreferrer">
-                            GitHub
-                        </a>.
-                    </li>
+                    <li><strong>Fork</strong> the repository on GitHub.</li>
                     <li>Open the latest <code>torrents_part_N.csv</code> file.</li>
-                    <li>
-                        Add your torrent at the end using the <code>;</code> delimiter:
+                    <li>Add your torrent at the end using the <code>;</code> delimiter:
                         <pre><code>infohash;name;size_bytes;created;0;0;0;date</code></pre>
                     </li>
                     <li>Submit your Pull Request. Our Action will build the database automatically!</li>
                 </ol>
-                <p class="modal-note">
-                    <strong>Note:</strong> Check the file <code>CONTRIBUTING.md</code> for detailed 
-                    instructions and helper scripts.
-                </p>
+                <p class="modal-note">Check the file <code>CONTRIBUING.MD</code> for instructions.</p>
             </div>
             <div class="modal-footer">
-                <a 
-                    href="https://github.com/wetdreams69/ducktorrents" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    class="magnet-btn"
-                    aria-label="View project on GitHub"
-                >
-                    🔗 View on GitHub
-                </a>
+                <a href="https://github.com/ogioia/ssr" target="_blank" class="magnet-btn">View on GitHub</a>
             </div>
         </div>
     </div>
 
-    <!-- Service Worker Registration -->
-    <script>
-        // Register Service Worker for offline support and smart caching
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then((registration) => {
-                        console.log('✅ Service Worker registered:', registration.scope);
-                    })
-                    .catch((error) => {
-                        console.error('❌ Service Worker registration failed:', error);
-                    });
-            });
-        }
-    </script>
-
-    <!-- Main Application Script -->
     <script type="module" src="app.js"></script>
 </body>
 

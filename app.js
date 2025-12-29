@@ -2,9 +2,6 @@ import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0
 
 let db;
 let conn;
-let searchTimeout;
-const searchCache = new Map();
-const MAX_CACHE_SIZE = 50;
 
 const searchInput = document.getElementById('search-input');
 const resultsContainer = document.getElementById('results-container');
@@ -15,8 +12,10 @@ const loader = document.getElementById('loader');
 
 async function init() {
     try {
+        // Get the base URL for proper path resolution
         const baseURL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
 
+        // Use local bundles to avoid CORS issues
         const BUNDLES = {
             mvp: {
                 mainModule: baseURL + 'lib/duckdb-mvp.wasm',
@@ -38,6 +37,7 @@ async function init() {
         conn = await db.connect();
         statusBadge.textContent = 'Engine Ready';
 
+        // Fetch and register the parquet file in DuckDB's virtual filesystem
         try {
             const parquetResponse = await fetch('torrents.parquet');
             if (parquetResponse.ok) {
@@ -48,18 +48,7 @@ async function init() {
                     CREATE TABLE torrents AS SELECT * FROM read_parquet('torrents.parquet');
                 `);
 
-                // Get database stats
-                const stats = await conn.query(`
-                    SELECT 
-                        COUNT(*) as total,
-                        COUNT(CASE WHEN seeders > 0 THEN 1 END) as active
-                    FROM torrents
-                `);
-                const statsData = stats.toArray()[0].toJSON();
-                
-                statusBadge.textContent = `${statsData.total.toLocaleString()} torrents indexed`;
-                statusBadge.title = `${statsData.active.toLocaleString()} active torrents`;
-                
+                statusBadge.textContent = 'Index Loaded';
                 loader.classList.add('hidden');
                 performSearch('');
             } else {
@@ -82,84 +71,31 @@ async function init() {
 async function performSearch(query) {
     if (!conn) return;
 
-    const queryTrimmed = query.trim();
-    const cacheKey = queryTrimmed.toLowerCase();
-
-    // Check cache first
-    if (searchCache.has(cacheKey)) {
-        const cached = searchCache.get(cacheKey);
-        renderResults(cached.rows, cached.duration, queryTrimmed === '', queryTrimmed);
-        return;
-    }
-
-    // Show loading state
-    if (queryTrimmed !== '') {
-        resultsContainer.innerHTML = '<div class="searching-message">Searching...</div>';
-        emptyState.classList.add('hidden');
-    }
-
     let sql;
-    
-    if (queryTrimmed === '') {
+    if (query.trim() === '') {
         // Show top 5 most downloaded torrents when search is empty
-        sql = 'SELECT * FROM torrents WHERE seeders > 0 ORDER BY completed DESC, seeders DESC LIMIT 5';
+        sql = 'SELECT * FROM torrents ORDER BY completed DESC, seeders DESC LIMIT 5';
     } else {
-        // Escape special characters for ILIKE
-        const searchTerm = queryTrimmed
-            .replace(/\\/g, '\\\\')
-            .replace(/%/g, '\\%')
-            .replace(/_/g, '\\_')
-            .replace(/'/g, "''");
-            
+        // Search directly what the user typed
+        const searchTerm = query.trim();
         sql = `
             SELECT * FROM torrents 
-            WHERE seeders > 0 AND (
-                name ILIKE '%${searchTerm}%' 
-                OR infohash ILIKE '%${searchTerm}%'
-            )
+            WHERE name ILIKE '%${searchTerm.replace(/'/g, "''")}%' 
+            OR infohash ILIKE '%${searchTerm}%'
             ORDER BY seeders DESC 
             LIMIT 50
         `;
     }
 
-    try {
-        const startTime = performance.now();
-        const result = await conn.query(sql);
-        const endTime = performance.now();
-        const rows = result.toArray();
-        const duration = endTime - startTime;
+    const startTime = performance.now();
+    const result = await conn.query(sql);
+    const endTime = performance.now();
+    const rows = result.toArray();
 
-        // Cache the results
-        if (searchCache.size >= MAX_CACHE_SIZE) {
-            const firstKey = searchCache.keys().next().value;
-            searchCache.delete(firstKey);
-        }
-        searchCache.set(cacheKey, { rows, duration });
-
-        renderResults(rows, duration, queryTrimmed === '', queryTrimmed);
-    } catch (error) {
-        console.error('Search error:', error);
-        resultsContainer.innerHTML = '<div class="error-message">Search error. Please try again.</div>';
-    }
+    renderResults(rows, endTime - startTime, query.trim() === '');
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function highlightMatch(text, searchTerm) {
-    if (!searchTerm || searchTerm === '') return escapeHtml(text);
-    
-    const escapedText = escapeHtml(text);
-    const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escapedTerm})`, 'gi');
-    
-    return escapedText.replace(regex, '<mark>$1</mark>');
-}
-
-function renderResults(rows, duration, isTopTorrents = false, searchTerm = '') {
+function renderResults(rows, duration, isTopTorrents = false) {
     resultsContainer.innerHTML = '';
 
     if (rows.length === 0) {
@@ -184,36 +120,22 @@ function renderResults(rows, duration, isTopTorrents = false, searchTerm = '') {
         card.className = 'result-card glass';
         card.innerHTML = `
             <div class="info text-truncate">
-                <h3 class="text-truncate" title="${escapeHtml(obj.name)}">
-                    ${highlightMatch(obj.name, searchTerm)}
-                </h3>
+                <h3 class="text-truncate" title="${obj.name}">${obj.name}</h3>
                 <div class="stats">
                     <span class="size">${sizeGB} GB</span>
-                    <span class="seeders" title="Seeders">S: ${obj.seeders}</span>
-                    <span class="leechers" title="Leechers">L: ${obj.leechers}</span>
-                    ${obj.completed ? `<span class="completed" title="Downloads">D: ${obj.completed}</span>` : ''}
+                    <span class="seeders">S: ${obj.seeders}</span>
+                    <span class="leechers">L: ${obj.leechers}</span>
                 </div>
             </div>
-            <a href="${magnet}" class="magnet-btn" title="Download via magnet link">Magnet</a>
+            <a href="${magnet}" class="magnet-btn">Magnet</a>
         `;
         resultsContainer.appendChild(card);
     });
 }
 
-// Event Listeners with debounce
+// Event Listeners
 searchInput.addEventListener('input', (e) => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        performSearch(e.target.value);
-    }, 300);
-});
-
-// Allow instant search on Enter
-searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        clearTimeout(searchTimeout);
-        performSearch(e.target.value);
-    }
+    performSearch(e.target.value);
 });
 
 // Modal Logic
@@ -227,15 +149,25 @@ const toggleModal = (e) => {
     modal.classList.toggle('hidden');
 };
 
-if (openModalBtn) openModalBtn.addEventListener('click', toggleModal);
-if (contributeBtn) contributeBtn.addEventListener('click', toggleModal);
-if (closeModalBtn) closeModalBtn.addEventListener('click', toggleModal);
+openModalBtn.addEventListener('click', toggleModal);
+contributeBtn.addEventListener('click', toggleModal);
+closeModalBtn.addEventListener('click', toggleModal);
 
-if (modal) {
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) toggleModal();
+modal.addEventListener('click', (e) => {
+    if (e.target === modal) toggleModal();
+});
+
+// Register Service Worker for offline support and smart caching
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(registration => {
+            console.log('Service Worker registered');
+            // Check for updates on every page load
+            registration.update();
+        }).catch((err) => {
+            console.error('Service Worker registration failed:', err);
+        });
     });
 }
 
-// Initialize
 init();
