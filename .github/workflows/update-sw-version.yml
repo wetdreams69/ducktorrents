@@ -6,6 +6,8 @@ on:
       - main
     paths-ignore:
       - 'sw.js' # Evitar bucles infinitos cuando el bot actualice el archivo
+  workflow_dispatch: 
+
 
 jobs:
   update-version:
