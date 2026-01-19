@@ -2,7 +2,7 @@ name: Weekly Cleanup
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # Cada 6 horas
+    - cron: '0 0 * * 0'  # Cada 6 horas
   workflow_dispatch:  # Permite ejecutar manualmente
 
 permissions:
