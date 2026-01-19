@@ -1,0 +1,14 @@
+name: Update Torrent Database
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Cada 6 horas
+  workflow_dispatch:  # Permite ejecutar manualmente
+
+permissions:
+  contents: write  # Necesario para hacer commit de los CSVs
+
+jobs:
+  search-torrents:
+    uses: wetdreams69/torrent-search/.github/workflows/rust.yml@main
+    # ↑ Cambia TU-USUARIO por tu usuario de GitHub
