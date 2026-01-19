@@ -1,40 +1,14 @@
-name: Weekly CSV Cleanup
+name: Update Torrent Database
 
 on:
   schedule:
-    - cron: '0 0 * * 0' # Sundays at 00:00 UTC
-  workflow_dispatch: 
+    - cron: '0 */6 * * *'  # Cada 6 horas
+  workflow_dispatch:  # Permite ejecutar manualmente
+
+permissions:
+  contents: write  # Necesario para hacer commit de los CSVs
 
 jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Scraper Dependencies
-        run: npm install bittorrent-tracker
-
-      - name: Run Scraper Script
-        run: node scripts/update-stats.js
-
-      - name: Commit and Push Updated CSV Parts
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          git add torrents_part_*.csv
-          if git diff --staged --quiet; then
-            echo "No changes in CSV parts, skipping commit."
-          else
-            git commit -m "chore: weekly csv health check and stats update [skip ci]"
-            git push
-          fi
+  search-torrents:
+    uses: wetdreams69/torrent-search/.github/workflows/update-tracker-stats.yml@master
+    # ↑ Cambia TU-USUARIO por tu usuario de GitHub
