@@ -1,4 +1,4 @@
-name: Update Torrent Database
+name: Weekly Cleanup
 
 on:
   schedule:
@@ -12,3 +12,4 @@ jobs:
   search-torrents:
     uses: wetdreams69/torrent-search/.github/workflows/update-tracker-stats.yml@master
     # ↑ Cambia TU-USUARIO por tu usuario de GitHub
+
