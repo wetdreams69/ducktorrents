@@ -1,4 +1,4 @@
-const VERSION = '2078fb3'; // This will be replaced by GitHub Actions
+const VERSION = '36ee7be'; // This will be replaced by GitHub Actions
 const CACHE_NAME = `ducktorrents-${VERSION}`;
 const STATIC_ASSETS = [
     './',
